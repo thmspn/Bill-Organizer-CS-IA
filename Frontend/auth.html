@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login & Signup - Bill Organizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            position: relative;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 50px; /* Reduced space below the title */
+        }
+        .flash-messages {
+            width: 100%;
+            text-align: center;
+            position: absolute;
+            top: 120px;
+            left: 0;
+            padding: 10px 0;
+            z-index: 1000;
+        }
+        .flash {
+            padding: 10px;
+            margin: 0 auto;
+            border-radius: 4px;
+            width: 50%;
+            text-align: center;
+        }
+        .flash.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .flash.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .auth-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 750px;
+            text-align: center;
+            margin-top: 0; /* Reduced margin so title sits directly above */
+        }
+        .auth-form {
+            width: 45%;
+        }
+        .auth-form h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .auth-form input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .auth-form button[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            background-color: #29aa47d2;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .auth-form button[type="submit"]:hover {
+            background-color: #218838;
+        }
+        .password-container {
+            position: relative;
+        }
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #007bff;
+            font-size: 12px;
+            padding: 5px;
+        }
+        .toggle-password:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Title -->
+    <h1>Bill Organizer</h1>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Login and Signup Forms -->
+    <div class="auth-container">
+        <!-- Forms Container -->
+        <div style="display: flex; width: 100%; justify-content: space-between;">
+            <!-- Signup Form (Left) -->
+            <div class="auth-form">
+                <h2>Sign Up</h2>
+                <form action="/signup" method="POST">
+                    <input type="text" name="username" placeholder="Username" required>
+                    <div class="password-container">
+                        <input type="password" name="password" id="signup-password" placeholder="Password" required>
+                        <button type="button" class="toggle-password" onclick="togglePassword('signup-password')">Show</button>
+                    </div>
+                    <button type="submit">Continue</button>
+                </form>
+            </div>
+
+            <!-- Login Form (Right) -->
+            <div class="auth-form">
+                <h2>Login</h2>
+                <form action="/login" method="POST">
+                    <input type="text" name="username" placeholder="Username" required>
+                    <div class="password-container">
+                        <input type="password" name="password" id="login-password" placeholder="Password" required>
+                        <button type="button" class="toggle-password" onclick="togglePassword('login-password')">Show</button>
+                    </div>
+                    <button type="submit">Continue</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript to toggle password visibility
+        function togglePassword(inputId) {
+            const passwordInput = document.getElementById(inputId);
+            const toggleButton = passwordInput.nextElementSibling;
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                toggleButton.textContent = "Hide";
+            } else {
+                passwordInput.type = "password";
+                toggleButton.textContent = "Show";
+            }
+        }
+    </script>
+</body>
+</html>

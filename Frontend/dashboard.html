@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Bill Organizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        .flash {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .flash.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .flash.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table th, table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        table th {
+            background-color: #ADD8E6;
+            color: #000;
+        }
+        table tr:hover {
+            background-color: #f1f1f1;
+        }
+        .actions button {
+            padding: 5px 10px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .actions button.edit {
+            background-color: #ffe082;
+            color: #000;
+        }
+        .actions button.delete {
+            background-color: #ee0018;
+            color: #fff;
+        }
+        .actions button.edit:hover {
+            background-color: #e0a800;
+        }
+        .actions button.delete:hover {
+            background-color: #a70011fd;
+        }
+        .top-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .top-buttons button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .top-buttons button.add-bill {
+            background-color: #29aa47d2;
+            color: #fff;
+        }
+        .top-buttons button.add-bill:hover {
+            background-color: #218838;
+        }
+        .filter-bills {
+            padding: 10px 20px; /* Match the padding of other buttons */
+            border: none;
+            border-radius: 4px; /* Consistent border radius */
+            background-color: #969a9694; /* Primary color for consistency */
+            color: #000; /* White text for contrast */
+            cursor: pointer;
+            font-size: 14px; /* Match the font size of other buttons */
+            transition: background-color 0.3s ease; /* Smooth hover effect */
+        }
+
+        .filter-bills:hover {
+            background-color: #969a96cb; /* Darker shade on hover */
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            width: 300px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .modal-content h2 {
+            margin-top: 0;
+        }
+        .modal-content input, .modal-content select {
+            width: 92%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .modal-content button {
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .modal-content button:hover {
+            background-color: #218838;
+        }
+        .close-modal {
+            text-align: right;
+            cursor: pointer;
+            font-size: 20px;
+            color: #888;
+        }
+        .averages {
+            margin-top: 20px;
+            font-size: 16px;
+        }
+        .averages p {
+            margin: 5px 0;
+        }
+        .graph-buttons {
+            margin-top: 10px;
+        }
+        .graph-buttons button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #969a9694; 
+            color: #000;
+        }
+        .graph-buttons button:hover {
+            background-color: #969a96cb;
+        }
+        .graph-buttons label {
+            margin-right: 10px;
+        }
+        .graph-buttons select {
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        .range-inputs {
+            display: flex;
+            gap: 10px; /* Space between the two inputs */
+            margin-bottom: 10px;
+        }
+
+        .range-inputs input {
+            flex: 1; /* Equal width for both inputs */
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+            table th, table td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <h1><u>Bill Organizer</u></h1>
+
+
+        <!-- Top Buttons -->
+        <div class="top-buttons">
+            <button class="add-bill" onclick="openAddWaterBillModal()">Add Water Bill</button>
+            <button class="add-bill" onclick="openAddElectricityBillModal()">Add Electricity Bill</button>
+            <button class="add-bill" onclick="openAddGasBillModal()">Add Gas Bill</button>
+        </div>
+
+        <!-- Water Bills Table -->
+        <div class="bills-list">
+            <h2>Water Bills</h2>
+            <button class="filter-bills" onclick="openFilterModal('water')">Filter Water Bills</button>
+            <!-- Water Bills Time Range Dropdown -->
+            <div class="graph-buttons">
+                <label for="time_range_water">Time Range:</label>
+                <select id="time_range_water" onchange="filterByYear('water', this.value)">
+                    <option value="all_time" {% if selected_year == 'all_time' %}selected{% endif %}>All Time</option>
+                    {% for year in water_years %}
+                        <option value="{{ year }}" {% if selected_year|string == year|string %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>                
+                <button onclick="generateGraph('water', 'time_range_water')">Generate Water Graphs</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Usage (m³)</th>
+                        <th>Rate (cents/m³)</th>
+                        <th>Amount ($)</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bill in water_bills %}
+                        <tr>
+                            <td>{{ bill.usage }}</td>
+                            <td>{{ "%.2f"|format(bill.rate) }}¢</td>
+                            <td>${{ "%.2f"|format(bill.amount) }}</td>
+                            <td>{{ bill.date.strftime('%B, %Y') }}</td>
+                            <td class="actions">
+                                <button class="edit" onclick="openEditWaterBillModal({{ bill.id }}, {{ bill.usage }}, {{ bill.rate }}, '{{ bill.date.strftime('%Y-%m') }}')">Edit</button>
+                                <form action="/delete_water_bill/{{ bill.id }}" method="POST" style="display:inline;">
+                                    <button type="submit" class="delete">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <!-- Averages for Water Bills -->
+            <div class="averages">
+                <p><strong>Average Rate:</strong> {{ "%.2f"|format(water_avg_rate) }}¢/m³</p>
+                <p><strong>Average Usage:</strong> {{ "%.2f"|format(water_avg_usage) }} m³</p>
+            </div>
+        </div>
+
+        <!-- Electricity Bills Table -->
+        <div class="bills-list">
+            <h2>Electricity Bills</h2>
+            <button class="filter-bills" onclick="openFilterModal('electricity')">Filter Electricity Bills</button>
+            <!-- Electricity Bills Time Range Dropdown -->
+            <div class="graph-buttons">
+                <label for="time_range_electricity">Time Range:</label>
+                <select id="time_range_electricity" onchange="filterByYear('water', this.value)">
+                    <option value="all_time" {% if selected_year == 'all_time' %}selected{% endif %}>All Time</option>
+                    {% for year in electricity_years %}
+                        <option value="{{ year }}" {% if selected_year|string == year|string %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+                
+                <button onclick="generateGraph('electricity', 'time_range_electricity')">Generate Electricity Graphs</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Usage (kWh)</th>
+                        <th>Rate (cents/kWh)</th>
+                        <th>Amount ($)</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bill in electricity_bills %}
+                        <tr>
+                            <td>{{ bill.usage }}</td>
+                            <td>{{ "%.2f"|format(bill.rate) }}¢</td>
+                            <td>${{ "%.2f"|format(bill.amount) }}</td>
+                            <td>{{ bill.date.strftime('%B, %Y') }}</td>
+                            <td class="actions">
+                                <button class="edit" onclick="openEditElectricityBillModal({{ bill.id }}, {{ bill.usage }}, {{ bill.rate }}, '{{ bill.date.strftime('%Y-%m') }}')">Edit</button>
+                                <form action="/delete_electricity_bill/{{ bill.id }}" method="POST" style="display:inline;">
+                                    <button type="submit" class="delete">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <!-- Averages for Electricity Bills -->
+            <div class="averages">
+                <p><strong>Average Rate:</strong> {{ "%.2f"|format(electricity_avg_rate) }}¢/kWh</p>
+                <p><strong>Average Usage:</strong> {{ "%.2f"|format(electricity_avg_usage) }} kWh</p>
+            </div>
+        </div>
+
+        <!-- Gas Bills Table -->
+        <div class="bills-list">
+            <h2>Gas Bills</h2>
+            <button class="filter-bills" onclick="openFilterModal('gas')">Filter Gas Bills</button>
+
+            <!-- Gas Bills Time Range Dropdown -->
+            <div class="graph-buttons">
+                <label for="time_range_gas">Time Range:</label>
+                <select id="time_range_gas" onchange="filterByYear('water', this.value)">
+                    <option value="all_time" {% if selected_year == 'all_time' %}selected{% endif %}>All Time</option>
+                    {% for year in gas_years %}
+                        <option value="{{ year }}" {% if selected_year|string == year|string %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>                
+                <button onclick="generateGraph('gas', 'time_range_gas')">Generate Gas Graphs</button>
+            </div>             
+            <table>
+                <thead>
+                    <tr>
+                        <th>Usage (m³)</th>
+                        <th>Rate ($/m³)</th>
+                        <th>Amount ($)</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bill in gas_bills %}
+                        <tr>
+                            <td>{{ bill.usage }}</td>
+                            <td>${{ "%.2f"|format(bill.rate) }}</td>
+                            <td>${{ "%.2f"|format(bill.amount) }}</td>
+                            <td>{{ bill.date.strftime('%B, %Y') }}</td>
+                            <td class="actions">
+                                <button class="edit" onclick="openEditGasBillModal({{ bill.id }}, {{ bill.usage }}, {{ bill.rate }}, '{{ bill.date.strftime('%Y-%m') }}')">Edit</button>
+                                <form action="/delete_gas_bill/{{ bill.id }}" method="POST" style="display:inline;">
+                                    <button type="submit" class="delete">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <!-- Averages for Gas Bills -->
+            <div class="averages">
+                <p><strong>Average Rate:</strong> ${{ "%.2f"|format(gas_avg_rate) }}/m³</p>
+                <p><strong>Average Usage:</strong> {{ "%.2f"|format(gas_avg_usage) }} m³</p>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions">
+            <button onclick="window.location.href='/export_csv/{{ user.id }}'">Export CSV</button>
+        </div>
+    </div>
+
+    <!-- Add Water Bill Modal -->
+    <div id="addWaterBillModal" class="modal">
+        <div class="modal-content">
+            <div class="close-modal" onclick="closeAddWaterBillModal()">&times;</div>
+            <h2>Add Water Bill</h2>
+            <form action="/add_water_bill/{{ user.id }}" method="POST">
+                <input type="number" step="0.01" name="usage" placeholder="Usage (m³)" required>
+                <input type="number" step="0.01" name="rate" placeholder="Rate (cents/m³)" required>
+                <!-- Calender dropdown -->
+                <input type="month" name="date" required>
+                <button type="submit">Add Bill</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Electricity Bill Modal -->
+    <div id="addElectricityBillModal" class="modal">
+        <div class="modal-content">
+            <div class="close-modal" onclick="closeAddElectricityBillModal()">&times;</div>
+            <h2>Add Electricity Bill</h2>
+            <form action="/add_electricity_bill/{{ user.id }}" method="POST">
+                <input type="number" step="0.01" name="usage" placeholder="Usage (kWh)" required>
+                <input type="number" step="0.01" name="rate" placeholder="Rate (cents/kWh)" required>
+                <input type="month" name="date" required>
+                <button type="submit">Add Bill</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Gas Bill Modal -->
+    <div id="addGasBillModal" class="modal">
+        <div class="modal-content">
+            <div class="close-modal" onclick="closeAddGasBillModal()">&times;</div>
+            <h2>Add Gas Bill</h2>
+            <form action="/add_gas_bill/{{ user.id }}" method="POST">
+                <input type="number" step="0.01" name="usage" placeholder="Usage (m³)" required>
+                <input type="number" step="0.01" name="rate" placeholder="Rate ($/m³)" required>
+                <input type="month" name="date" required>
+                <button type="submit">Add Bill</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Water Bill Modal -->
+    <div id="editWaterBillModal" class="modal">
+        <div class="modal-content">
+            <div class="close-modal" onclick="closeEditWaterBillModal()">&times;</div>
+            <h2>Edit Water Bill</h2>
+            <form id="edit-water-bill-form" method="POST">
+                <input type="hidden" name="bill_id" id="edit-water-bill-id">
+                <input type="number" step="0.01" name="usage" id="edit-water-usage" placeholder="Usage (m³)" required>
+                <input type="number" step="0.01" name="rate" id="edit-water-rate" placeholder="Rate (cents/m³)" required>
+                <input type="month" name="date" id="edit-water-date" required>
+                <button type="submit">Update Bill</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Electricity Bill Modal -->
+    <div id="editElectricityBillModal" class="modal">
+        <div class="modal-content">
+            <div class="close-modal" onclick="closeEditElectricityBillModal()">&times;</div>
+            <h2>Edit Electricity Bill</h2>
+            <form id="edit-electricity-bill-form" method="POST">
+                <input type="hidden" name="bill_id" id="edit-electricity-bill-id">
+                <input type="number" step="0.01" name="usage" id="edit-electricity-usage" placeholder="Usage (kWh)" required>
+                <input type="number" step="0.01" name="rate" id="edit-electricity-rate" placeholder="Rate (cents/kWh)" required>
+                <input type="month" name="date" id="edit-electricity-date" required>
+                <button type="submit">Update Bill</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Gas Bill Modal -->
+    <div id="editGasBillModal" class="modal">
+        <div class="modal-content">
+            <div class="close-modal" onclick="closeEditGasBillModal()">&times;</div>
+            <h2>Edit Gas Bill</h2>
+            <form id="edit-gas-bill-form" method="POST">
+                <input type="hidden" name="bill_id" id="edit-gas-bill-id">
+                <input type="number" step="0.01" name="usage" id="edit-gas-usage" placeholder="Usage (m³)" required>
+                <input type="number" step="0.01" name="rate" id="edit-gas-rate" placeholder="Rate ($/m³)" required>
+                <input type="month" name="date" id="edit-gas-date" required>
+                <button type="submit">Update Bill</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Filter Modal -->
+    <div id="filterModal" class="modal">
+        <div class="modal-content">
+            <div class="close-modal" onclick="closeFilterModal()">&times;</div>
+            <h2>Filter Bills</h2>
+            <form id="filter-form" method="GET">
+                <!-- Usage Range -->
+                <label for="usage_min">Usage Range:</label>
+                <div class="range-inputs">
+                    <input type="number" step="0.01" id="usage_min" name="usage_min" placeholder="Min Usage">
+                    <input type="number" step="0.01" id="usage_max" name="usage_max" placeholder="Max Usage">
+                </div>
+
+                <!-- Rate Range -->
+                <label for="rate_min">Rate Range:</label>
+                <div class="range-inputs">
+                    <input type="number" step="0.01" id="rate_min" name="rate_min" placeholder="Min Rate">
+                    <input type="number" step="0.01" id="rate_max" name="rate_max" placeholder="Max Rate">
+                </div>
+
+                <!-- Amount Range -->
+                <label for="amount_min">Amount Range ($):</label>
+                <div class="range-inputs">
+                    <input type="number" step="0.01" id="amount_min" name="amount_min" placeholder="Min Amount">
+                    <input type="number" step="0.01" id="amount_max" name="amount_max" placeholder="Max Amount">
+                </div>
+
+                <!-- Date Range -->
+                <label for="start_date">Date Range:</label>
+                <div class="range-inputs">
+                    <input type="date" id="start_date" name="start_date">
+                    <input type="date" id="end_date" name="end_date">
+                </div>
+
+                <button type="submit">Apply Filters</button>
+            </form>
+        </div>
+    </div>
+    <!--Scripts for handling models and AJAX Request-->
+    <script>
+        // Opens the modal for adding a new water bill entry
+        function openAddWaterBillModal() {
+            // Set the display style of the modal to 'flex' to make it visible
+            document.getElementById('addWaterBillModal').style.display = 'flex';
+        }
+    
+        // Closes the add water bill modal and clears the form inputs
+        function closeAddWaterBillModal() {
+            // Hide the modal by setting display to 'none'
+            document.getElementById('addWaterBillModal').style.display = 'none';
+            // Reset all input fields within the form
+            document.getElementById('addWaterBillModal').querySelector('form').reset();
+        }
+    
+        // Opens the modal for adding a new electricity bill entry
+        function openAddElectricityBillModal() {
+            document.getElementById('addElectricityBillModal').style.display = 'flex';
+        }
+    
+        // Closes the add electricity bill modal and resets the form fields
+        function closeAddElectricityBillModal() {
+            document.getElementById('addElectricityBillModal').style.display = 'none';
+            document.getElementById('addElectricityBillModal').querySelector('form').reset();
+        }
+    
+        // Opens the modal for adding a new gas bill entry
+        function openAddGasBillModal() {
+            document.getElementById('addGasBillModal').style.display = 'flex';
+        }
+    
+        // Closes the add gas bill modal and resets the input fields
+        function closeAddGasBillModal() {
+            document.getElementById('addGasBillModal').style.display = 'none';
+            document.getElementById('addGasBillModal').querySelector('form').reset();
+        }
+    
+        // Opens the edit water bill modal and populates it with the selected bill's details
+        function openEditWaterBillModal(billId, usage, rate, date) {
+            // Set the form fields with the provided bill data
+            document.getElementById('edit-water-bill-id').value = billId;
+            document.getElementById('edit-water-usage').value = usage;
+            document.getElementById('edit-water-rate').value = rate;
+            document.getElementById('edit-water-date').value = date;
+            // Display the modal
+            document.getElementById('editWaterBillModal').style.display = 'flex';
+        }
+    
+        // Closes the edit water bill modal and clears the form
+        function closeEditWaterBillModal() {
+            document.getElementById('editWaterBillModal').style.display = 'none';
+            document.getElementById('edit-water-bill-form').reset();
+        }
+    
+        // Opens the edit electricity bill modal and fills it with existing bill data
+        function openEditElectricityBillModal(billId, usage, rate, date) {
+            document.getElementById('edit-electricity-bill-id').value = billId;
+            document.getElementById('edit-electricity-usage').value = usage;
+            document.getElementById('edit-electricity-rate').value = rate;
+            document.getElementById('edit-electricity-date').value = date;
+            document.getElementById('editElectricityBillModal').style.display = 'flex';
+        }
+    
+        // Closes the edit electricity bill modal and resets the form fields
+        function closeEditElectricityBillModal() {
+            document.getElementById('editElectricityBillModal').style.display = 'none';
+            document.getElementById('edit-electricity-bill-form').reset();
+        }
+    
+        // Opens the edit gas bill modal and fills in the current details for modification
+        function openEditGasBillModal(billId, usage, rate, date) {
+            document.getElementById('edit-gas-bill-id').value = billId;
+            document.getElementById('edit-gas-usage').value = usage;
+            document.getElementById('edit-gas-rate').value = rate;
+            document.getElementById('edit-gas-date').value = date;
+            document.getElementById('editGasBillModal').style.display = 'flex';
+        }
+    
+        // Closes the edit gas bill modal and resets input fields
+        function closeEditGasBillModal() {
+            document.getElementById('editGasBillModal').style.display = 'none';
+            document.getElementById('edit-gas-bill-form').reset();
+        }
+    
+        // Opens the filter modal and dynamically updates the form action URL based on bill type
+        function openFilterModal(billType) {
+            document.getElementById('filterModal').style.display = 'flex';
+            document.getElementById('filter-form').action = `/filter_${billType}_bills/{{ user.id }}`;
+        }
+    
+        // Closes the filter modal and resets the filter form fields
+        function closeFilterModal() {
+            document.getElementById('filterModal').style.display = 'none';
+            document.getElementById('filter-form').reset();
+        }
+    
+        // Opens a new tab with a dynamically generated graph based on bill type and time range
+        function generateGraph(billType, timeRangeId) {
+            // Retrieve the selected time range value from the dropdown
+            const timeRange = document.getElementById(timeRangeId).value;
+            // Open a new window with the graph URL including parameters
+            window.open(`/generate_graph/{{ user.id }}?type=${billType}&time_range=${timeRange}`, '_blank');
+        }
+    
+        // Updates the dashboard view based on the selected year for bill filtering
+        function filterByYear(billType, year) {
+            window.location.href = `/dashboard/{{ user.id }}?year=${year}`;
+        }
+    
+        // Handles submission of the edit water bill form via AJAX request
+        document.getElementById('edit-water-bill-form').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent default form submission
+            const formData = new FormData(this); // Collect form data
+            fetch(`/edit_water_bill/${formData.get('bill_id')}`, {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    window.location.reload(); // Refresh page on success
+                }
+            });
+        });
+    
+        // Handles submission of the edit electricity bill form via AJAX request
+        document.getElementById('edit-electricity-bill-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            fetch(`/edit_electricity_bill/${formData.get('bill_id')}`, {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                }
+            });
+        });
+    
+        // Handles submission of the edit gas bill form via AJAX request
+        document.getElementById('edit-gas-bill-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            fetch(`/edit_gas_bill/${formData.get('bill_id')}`, {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                }
+            });
+        });
+    </script>    
+</body>
+</html>
